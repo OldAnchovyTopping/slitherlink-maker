@@ -11,6 +11,16 @@ class CellValueOverload(Exception):
     pass
 
 
+class BadCellValueError(Exception):
+    """Raised when a cell tries to accept a value outside range 0-4."""
+    pass
+
+
+class NotALineTile(Exception):
+    """Raised when a line changing function accesses a non-line grid tile."""
+    pass
+
+
 class Slitherlink:
     def __init__(self, width: int, height: int):
         self.width = width
@@ -50,7 +60,8 @@ class Slitherlink:
         """
         assert 1 <= line_x <= self.grid_height, "Row index out of bounds."
         assert 1 <= line_y <= self.grid_width, "Column index out of bounds."
-        assert (line_x + line_y) % 2, "These coordinates are not an edge."
+        if not (line_x + line_y) % 2:
+            raise NotALineTile("These coordinates are not an edge.")
         new_addition = "E" if to_empty else "L"
         self.state_of_grid[line_x][line_y] = new_addition
 
@@ -64,7 +75,8 @@ class Slitherlink:
         """
         assert 1 <= cell_x <= self.height, "Row index out of bounds."
         assert 1 <= cell_y <= self.width, "Column index out of bounds."
-        assert 0 <= new_number <= 4, "Invalid input. 0-3 numbers, or 4 empty."
+        if not (0 <= new_number <= 4):
+            raise BadCellValueError("Invalid input. 0-3 numbers, or 4 empty.")
         true_x, true_y = 2 * cell_x, 2 * cell_y  # In self.state_of_grid.
         self.state_of_grid[true_x][true_y] = new_number
 
