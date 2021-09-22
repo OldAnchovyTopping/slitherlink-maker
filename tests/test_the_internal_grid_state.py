@@ -1,4 +1,4 @@
-from src.slitherlinking.slitherlink_internal_state import Slitherlink
+from slitherlinking.slitherlink_internal_state import Slitherlink
 
 
 if __name__ == '__main__':
