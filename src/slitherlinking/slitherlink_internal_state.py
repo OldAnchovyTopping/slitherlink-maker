@@ -1,4 +1,5 @@
 from copy import deepcopy
+from random import randint
 from typing import Union
 
 
@@ -33,7 +34,6 @@ class Slitherlink:
         odd_row: list[Union[int, str]] =\
             ["E" if i % 2 else 4 for i in range(self.grid_width + 2)]
         odd_row[0] = odd_row[-1] = " "  # Don't forget the padding
-        # : list[Union[list[Union[str, int]], list[str]]]
         self.state_of_grid: list[list[Union[str, int]]] =\
             [odd_row[:] if i % 2 else even_row[:]
              for i in range(self.grid_height)]
@@ -103,21 +103,21 @@ class Slitherlink:
         down_edge: bool = self.state_of_grid[true_x + 1][true_y] == "L"
         return up_edge + left_edge + right_edge + down_edge  # Bool summing!
 
-    def check_a_corner(self, corner_x: int, corner_y: int) -> bool:
+    def check_a_corner(self, corner_x: int, corner_y: int):
         """Returns True iff the number of corner incident edges is <= 2."""
         assert 0 <= corner_x <= self.height, "Row index out of bounds."
         assert 0 <= corner_y <= self.width, "Column index out of bounds."
         true_x, true_y = 2 * corner_x + 1, 2 * corner_y + 1
-        return self.number_of_lined_edges_around(true_x, true_y) <= 2
+        if self.number_of_lined_edges_around(true_x, true_y) > 2:
+            raise PathCrossingException(
+                f"The path crosses at {corner_x}, {corner_y}."
+            )
 
     def check_all_corners(self):
         """Raises a PathCrossingException if the path is crossing itself."""
         for x_coordinate in range(self.height + 1):
             for y_coordinate in range(self.width + 1):
-                if not self.check_a_corner(x_coordinate, y_coordinate):
-                    raise PathCrossingException(
-                        f"The path crosses at {x_coordinate}, {y_coordinate}."
-                    )
+                self.check_a_corner(x_coordinate, y_coordinate)
 
     def check_a_number(self, cell_x: int, cell_y: int):
         """Returns True iff
@@ -138,3 +138,16 @@ class Slitherlink:
                         f"The cell at {x_coordinate}, {y_coordinate} has"
                         f" too many edges."
                     )
+
+    def populate_grid_randomly(self):
+        """Fills out the grid cells with random numbers."""
+        for x_coordinate in range(1, self.height + 1):
+            for y_coordinate in range(1, self.width + 1):
+                random_number = randint(0, 4)
+                self.change_number(x_coordinate, y_coordinate, random_number)
+
+    def clear_the_numbers(self):
+        """Deletes all the slitherlink numbers, i.e. makes them into 4's."""
+        for x_coordinate in range(1, self.height + 1):
+            for y_coordinate in range(1, self.width + 1):
+                self.change_number(x_coordinate, y_coordinate, 4)
