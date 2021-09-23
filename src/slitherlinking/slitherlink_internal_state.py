@@ -18,6 +18,11 @@ class BadCellValueError(Exception):
     pass
 
 
+class BadLineCharException(Exception):
+    """Raised when a cell tries to accept a value outside range 0-4."""
+    pass
+
+
 class NotALineTile(Exception):
     """Raised when a line changing function accesses a non-line grid tile."""
     pass
@@ -55,21 +60,23 @@ class Slitherlink:
                 pretty_grid[row][column] = str(pretty_grid[row][column])
         return "\n".join(str(row) for row in pretty_grid)
 
-    def change_line_segment(self, line_x: int, line_y: int, to_empty: bool):
+    def change_line_segment(self, line_x: int, line_y: int, char: str):
         """
         Places or erases an edge. The coordinates must point to
         an inside edge, otherwise an assertion fails.
 
         :param line_x: The x-coordinate of the line in self.state_of_grid.
         :param line_y: The y-coordinate of the line in self.state_of_grid.
-        :param to_empty: True means erase an edge. False mean add an edge.
+        :param char: E for empty, X for marked empty, L for line.
+            Reject otherwise and raise an exception.
         """
         assert 1 <= line_x <= self.grid_height, "Row index out of bounds."
         assert 1 <= line_y <= self.grid_width, "Column index out of bounds."
         if not (line_x + line_y) % 2:
             raise NotALineTile("These coordinates are not an edge.")
-        new_addition = "E" if to_empty else "L"
-        self.state_of_grid[line_x][line_y] = new_addition
+        if not (char == "E" or char == "L" or char == "X"):
+            raise BadLineCharException("This character is not allowed.")
+        self.state_of_grid[line_x][line_y] = char
 
     def change_number(self, cell_x: int, cell_y: int, new_number: int):
         """
@@ -127,17 +134,16 @@ class Slitherlink:
         true_x, true_y = 2 * cell_x, 2 * cell_y  # In self.state_of_grid.
         cell_value: int = int(self.state_of_grid[true_x][true_y])
         adjacent_edges = self.number_of_lined_edges_around(true_x, true_y)
-        return adjacent_edges <= cell_value
+        if adjacent_edges > cell_value:
+            raise CellValueOverload(
+                        f"The cell at {cell_x}, {cell_y} has too many edges."
+                    )
 
     def check_all_numbers(self):
         """Raises a CellValueOverload if the path is crossing itself."""
         for x_coordinate in range(1, self.height + 1):
             for y_coordinate in range(1, self.width + 1):
-                if not self.check_a_number(x_coordinate, y_coordinate):
-                    raise CellValueOverload(
-                        f"The cell at {x_coordinate}, {y_coordinate} has"
-                        f" too many edges."
-                    )
+                self.check_a_number(x_coordinate, y_coordinate)
 
     def populate_grid_randomly(self):
         """Fills out the grid cells with random numbers."""

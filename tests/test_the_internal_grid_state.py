@@ -18,8 +18,66 @@ def test_cleared_grid_against_a_fresh_one(x_size: int, y_size: int):
     ([(6, 9), (7, 8), (7, 10), (8, 9)], (3, 4))
 ])
 def test_line_crossing_at_corner(lines: list[tuple], bad_corner: tuple[int]):
+    """Checks that a 3-way and 4-way corners raise PathCrossingException."""
     with pytest.raises(PathCrossingException):
         new_grid = Slitherlink(5, 6)
         for x_coordinate, y_coordinate in lines:
-            new_grid.change_line_segment(x_coordinate, y_coordinate, False)
+            new_grid.change_line_segment(x_coordinate, y_coordinate, "L")
         new_grid.check_a_corner(*bad_corner)
+
+
+@pytest.mark.parametrize("lines", [
+    ([]),
+    ([(1, 2), (1, 4), (1, 6), (2, 7), (3, 6), (3, 4), (3, 2), (2, 1)]),
+    ([(1, 2), (1, 6), (2, 7), (3, 4), (3, 2)]),
+    ([(1, 4), (2, 7), (11, 2), (13, 12)])
+])
+def test_for_no_crossing_of_lines(lines: list[tuple]):
+    """Checks that a grid with corners with <= 2 lines DON'T raise
+    PathCrossingException. Test #2 includes a closed path."""
+    new_grid = Slitherlink(6, 6)
+    for x_coordinate, y_coordinate in lines:
+        new_grid.change_line_segment(x_coordinate, y_coordinate, "L")
+    new_grid.check_all_corners()
+
+
+@pytest.mark.parametrize("cell_x, cell_y, number", [
+    (1, 1, 0),
+    (1, 2, 0),
+    (2, 1, 0),
+    (2, 2, 0),
+    (1, 4, 0),
+    (1, 5, 0),
+    (1, 6, 0),
+    (2, 4, 0),
+    (2, 5, 0),
+    (2, 6, 0),
+    (4, 2, 0),
+    (5, 1, 0),
+    (5, 3, 0),
+    (6, 2, 0),
+    (5, 5, 0),
+    (1, 4, 0),
+    (1, 5, 0),
+    (1, 6, 0),
+    (2, 4, 0),
+    (2, 5, 0),
+    (2, 6, 0),
+    (4, 2, 1),
+    (5, 1, 1),
+    (5, 3, 1),
+    (6, 2, 1),
+    (5, 5, 1),
+    (4, 2, 2),
+    (5, 1, 2),
+    (5, 3, 2),
+    (6, 2, 2),
+    (5, 5, 2),
+    (5, 5, 3)
+])
+def test_cell_number_overloads(number_test_grid: Slitherlink,
+                               cell_x: int, cell_y: int, number: int):
+    """Checks that all number overloading cases raise CellValueOverload."""
+    with pytest.raises(CellValueOverload):
+        number_test_grid.change_number(cell_x, cell_y, number)
+        number_test_grid.check_a_number(cell_x, cell_y)
