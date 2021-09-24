@@ -9,6 +9,8 @@ def test_cleared_grid_against_a_fresh_one(x_size: int, y_size: int):
     random_then_clear.populate_grid_randomly()
     random_then_clear.clear_the_numbers()
     assert Slitherlink(x_size, y_size) == random_then_clear
+    assert random_then_clear == eval(repr(random_then_clear))
+    assert str(random_then_clear) == str(Slitherlink(x_size, y_size))
 
 
 @pytest.mark.parametrize("lines, bad_corner", [
@@ -103,13 +105,40 @@ def test_cell_number_works(number_test_grid: Slitherlink,
 
 
 @pytest.mark.parametrize("tested_number", [-20, -3, -1, 5, 6, 8, 13, 142, 211])
-def test_bad_cell_number_values(tested_number: int):
-    fresh_grid = Slitherlink(2, 2)
+def test_bad_cell_number_values(char_grid: Slitherlink, tested_number: int):
     with pytest.raises(BadCellValueError):
-        fresh_grid.change_number(1, 2, tested_number)
+        char_grid.change_number(1, 2, tested_number)
 
 
 @pytest.mark.parametrize("tested_number", [0, 1, 2, 3, 4])
-def test_correct_cell_number_values(tested_number: int):
-    fresh_grid = Slitherlink(2, 2)
-    fresh_grid.change_number(1, 2, tested_number)  # No exception here.
+def test_correct_cell_numbers(char_grid: Slitherlink, tested_number: int):
+    char_grid.change_number(1, 2, tested_number)  # No exception here.
+
+
+@pytest.mark.parametrize("tested_char", ["0", "1", "2", "3", "4", "e", "l",
+                                         "x", "A", "B", "D", "K", "Y", "!"])
+def test_bad_line_char_values(char_grid: Slitherlink, tested_char: str):
+    with pytest.raises(BadLineCharException):
+        char_grid.change_line_segment(1, 2, tested_char)
+
+
+@pytest.mark.parametrize("tested_char", ["E", "L", "X"])
+def test_correct_line_char_values(char_grid: Slitherlink, tested_char: str):
+    char_grid.change_line_segment(1, 2, tested_char)  # No exception here.
+
+
+@pytest.mark.parametrize("test_x, test_y", [
+    *((x, y) for x, y in product((1, 3, 5, 7, 9, 11), repeat=2)),
+    *((x, y) for x, y in product((2, 4, 6, 8, 10), repeat=2))
+])
+def test_bad_line_coordinates(char_grid: Slitherlink, test_x: int, test_y: int):
+    with pytest.raises(NotALineTile):
+        char_grid.change_line_segment(test_x, test_y, "L")
+
+
+@pytest.mark.parametrize("test_x, test_y", [
+    *((x, y) for x, y in product((1, 3, 5, 7, 9, 11), (2, 4, 6, 8, 10)))
+])
+def test_correct_line_coordinates(char_grid: Slitherlink,
+                                  test_x: int, test_y: int):
+    char_grid.change_line_segment(test_x, test_y, "L")  # No exception here.

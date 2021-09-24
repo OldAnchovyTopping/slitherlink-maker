@@ -5,27 +5,22 @@ from typing import Union
 
 class PathCrossingException(Exception):
     """Raised when a corner has >= 3 incident edges."""
-    pass
 
 
 class CellValueOverload(Exception):
     """Raised when a cell has more incident edges than its value."""
-    pass
 
 
 class BadCellValueError(Exception):
     """Raised when a cell tries to accept a value outside range 0-4."""
-    pass
 
 
 class BadLineCharException(Exception):
-    """Raised when a cell tries to accept a value outside range 0-4."""
-    pass
+    """Raised when a line tile tries changing to something else than ELX."""
 
 
 class NotALineTile(Exception):
     """Raised when a line changing function accesses a non-line grid tile."""
-    pass
 
 
 class Slitherlink:

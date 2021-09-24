@@ -13,3 +13,8 @@ def number_test_grid():
     for x, y in lines:
         testing_grid.change_line_segment(x, y, "L")
     return testing_grid
+
+
+@pytest.fixture(scope="session")
+def char_grid():
+    return Slitherlink(5, 6)
