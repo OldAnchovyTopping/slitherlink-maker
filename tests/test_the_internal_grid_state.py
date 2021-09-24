@@ -1,6 +1,9 @@
-from slitherlinking.slitherlink_internal_state import *
+from slitherlinking.slitherlink_internal_state import Slitherlink,\
+    PathCrossingException, CellValueOverload, BadCellValueError,\
+    BadLineCharException, NotALineTile
 import pytest
 from itertools import product
+from typing import List, Tuple
 
 
 @pytest.mark.parametrize("x_size, y_size", [(0, 0), (1, 13), (3, 4), (20, 50)])
@@ -20,7 +23,8 @@ def test_cleared_grid_against_a_fresh_one(x_size: int, y_size: int):
     ([(9, 10), (8, 11), (10, 11)], (4, 5)),
     ([(6, 9), (7, 8), (7, 10), (8, 9)], (3, 4))
 ])
-def test_line_crossing_at_corner(lines: list[tuple], bad_corner: tuple[int]):
+def test_line_crossing_at_corner(lines: List[Tuple[int, int]],
+                                 bad_corner: Tuple[int, int]):
     """Checks that a 3-way and 4-way corners raise PathCrossingException."""
     with pytest.raises(PathCrossingException):
         new_grid = Slitherlink(5, 6)
@@ -35,7 +39,7 @@ def test_line_crossing_at_corner(lines: list[tuple], bad_corner: tuple[int]):
     ([(1, 2), (1, 6), (2, 7), (3, 4), (3, 2)]),
     ([(1, 4), (2, 7), (11, 2), (13, 12)])
 ])
-def test_for_no_crossing_of_lines(lines: list[tuple]):
+def test_for_no_crossing_of_lines(lines: List[Tuple[int, int]]):
     """Checks that a grid with corners with <= 2 lines DON'T raise
     PathCrossingException. Test #2 includes a closed path."""
     new_grid = Slitherlink(6, 6)
@@ -97,7 +101,7 @@ def test_cell_number_overloads(number_test_grid: Slitherlink,
          (4, 2), (5, 1), (5, 3), (6, 2)])
 ])
 def test_cell_number_works(number_test_grid: Slitherlink,
-                           cells: list[int], number: int):
+                           cells: List[Tuple[int, int]], number: int):
     """Checks all viable number-line configurations that work."""
     for cell_x, cell_y in cells:
         number_test_grid.change_number(cell_x, cell_y, number)

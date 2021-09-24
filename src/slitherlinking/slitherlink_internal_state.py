@@ -1,6 +1,6 @@
 from copy import deepcopy
 from random import randint
-from typing import Union
+from typing import List, Union
 
 
 class PathCrossingException(Exception):
@@ -29,15 +29,15 @@ class Slitherlink:
         self.height = height
         self.grid_width = 2 * self.width + 1
         self.grid_height = 2 * self.height + 1
-        even_row: list[Union[str, int]] =\
+        even_row: List[Union[str, int]] =\
             list("E" + "XE" * (self.width + 1))  # With extra padding
-        odd_row: list[Union[int, str]] =\
+        odd_row: List[Union[int, str]] =\
             ["E" if i % 2 else 4 for i in range(self.grid_width + 2)]
         odd_row[0] = odd_row[-1] = " "  # Don't forget the padding
-        self.state_of_grid: list[list[Union[str, int]]] =\
+        self.state_of_grid: List[List[Union[str, int]]] =\
             [odd_row[:] if i % 2 else even_row[:]
              for i in range(self.grid_height)]
-        vertical_padding: list[Union[str, int]] =\
+        vertical_padding: List[Union[str, int]] =\
             list(" E" * (self.width + 1) + " ")
         self.state_of_grid.insert(0, vertical_padding)  # Need to pad top...
         self.state_of_grid.append(vertical_padding)  # ... And bottom too.
