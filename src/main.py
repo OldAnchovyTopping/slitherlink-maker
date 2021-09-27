@@ -1,4 +1,4 @@
-from visuals.text_button import StateChangerButton, TextInputField
+from visuals.text_button import StateChangerButton, NumberInput
 import pygame
 import os.path
 import sys
@@ -108,7 +108,7 @@ class MainMenu(ButtonStateHandler):
         self.text_buttons = [self.play_the_game, self.read_the_instructions, self.edit_options, self.quit_the_game]
         self.background = OLIVE  # It'll either be a solid colour, or a pygame.image.
         self.is_background_solid_colour = True  # Colour -> True, Image -> False!
-        self.text_input_test = TextInputField((PINK, WHITE), 10, 10, 300, 200)
+        self.text_input_test = NumberInput((PINK, WHITE), 100, 100)
         super().__init__(self.text_buttons, [self.text_input_test], self.background, self.is_background_solid_colour)
 
     def startup(self):
@@ -127,9 +127,9 @@ class GamePlay(ButtonStateHandler):
 
 
 if __name__ == "__main__":
-    PINK = (245, 202, 195)
-    WHITE = (255, 255, 255)
-    OLIVE = (134, 161, 96)
+    PINK = (245, 202, 195, 255)
+    WHITE = (255, 255, 255, 255)
+    OLIVE = (134, 161, 96, 255)
 
     # This is to have a base path to file in a variable,
     # regardless of if we freeze the project into a .exe. format.
