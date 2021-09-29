@@ -1,7 +1,8 @@
 from pygame.freetype import SysFont
 from pygame.sprite import Sprite
 import pygame
-Colour = tuple[int, int, int, int]  # Alpha value MUST be included!
+from visuals.colours import Colour, BLACK
+Position = tuple[int, int]
 
 
 def create_surface(text: str, size: int, bg_rgb: Colour, font_rgb: Colour,
@@ -13,7 +14,7 @@ def create_surface(text: str, size: int, bg_rgb: Colour, font_rgb: Colour,
 
 
 class StateChangerButton(Sprite):
-    def __init__(self, center_pos: tuple[int, int], text: str, size: int,
+    def __init__(self, center_pos: Position, text: str, size: int,
                  bg_rgb: Colour, font_rgb: Colour, action: str):
         """
         Makes a UI text button.
@@ -42,8 +43,8 @@ class StateChangerButton(Sprite):
     def rect(self):
         return self.highlight_rect if self.mouse_over else self.default_rect
 
-    def button_state_update(self, mouse_pos: tuple[int, int], clicked: bool):
-        if self.rect.collidepoint(mouse_pos):
+    def button_state_update(self, mouse_position: Position, clicked: bool):
+        if self.rect.collidepoint(mouse_position):
             self.mouse_over = True
             if clicked:
                 return self.next_state
@@ -56,45 +57,67 @@ class StateChangerButton(Sprite):
 
 class NumberInput:
     def __init__(self, colours: tuple[Colour, Colour],
-                 corner_x: int, corner_y: int):
-        self.rect = pygame.Rect(corner_x, corner_y, 250, 250)
+                 corner_x: int, corner_y: int, label_string: str):
+        self.rect = pygame.Rect(corner_x, corner_y, 270, 270)
         assert len(colours) == 2
         self.active_colour, self.inactive_colour = colours
         self.colour = self.inactive_colour
-        self.text_size = 200
+        self.label_size = 20
+        self.input_size = 200
         self.text = "8"
-        self.text_surface = create_surface(self.text, self.text_size,
-                                           self.colour, (0, 0, 0, 255))
+        self.label_list = label_string.split("\n")
+        self.input_text, self.label_texts = self.recreate_surfaces()
         self.is_active = False
 
-    def activity_update(self, mouse_pos: tuple[int, int], clicked: bool):
+    def recreate_surfaces(self):
+        num_in = create_surface(self.text, self.input_size, self.colour, BLACK)
+        labels = [create_surface(s, self.label_size, self.colour, BLACK)
+                  for s in self.label_list]
+        return num_in, labels
+
+    def activity_update(self, mouse_position: Position, clicked: bool):
         if clicked:
-            if self.rect.collidepoint(mouse_pos):
+            if self.rect.collidepoint(mouse_position):
                 self.is_active = True
                 self.colour = self.active_colour
-                self.text_surface = create_surface(self.text, self.text_size,
-                                                   self.colour, (0, 0, 0, 255))
+                # Re-render the text.
+                self.input_text, self.label_texts = self.recreate_surfaces()
 
     def text_update(self, key_press_event):
         pressed_key = key_press_event.key
-        if pressed_key == pygame.K_RETURN:
-            self.is_active = False
-            self.colour = self.inactive_colour
-        elif pressed_key == pygame.K_BACKSPACE:
-            self.text = self.text[:-1]
-        elif pygame.K_0 <= pressed_key <= pygame.K_9 or\
-                pygame.K_KP1 <= pressed_key <= pygame.K_KP0:
-            self.text += key_press_event.unicode
-            self.text = self.text[-2:]  # We only allow 2 characters at most.
+        if self.is_active:
+            if pressed_key == pygame.K_RETURN:
+                self.is_active = False
+                self.colour = self.inactive_colour
+            elif pressed_key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+                if not self.text:
+                    self.text = "1"
+            elif pygame.K_0 <= pressed_key <= pygame.K_9 or\
+                    pygame.K_KP1 <= pressed_key <= pygame.K_KP0:
+                self.text += key_press_event.unicode
+                self.text = self.text[-2:]  # At most 2 characters allowed.
         # Re-render the text.
-        self.text_surface = create_surface(self.text, self.text_size,
-                                           self.colour, (0, 0, 0, 255))
+        self.input_text, self.label_texts = self.recreate_surfaces()
 
     def draw(self, screen):
-        # Here is the box outline.
+        # First the box outline.
         pygame.draw.rect(screen, self.colour, self.rect, 2)
-        # And now we make sure the displayed text is centered.
-        vertical_pad = (self.rect.h - self.text_surface.get_height()) // 2
-        horizontal_pad = (self.rect.w - self.text_surface.get_width()) // 2
-        corner = (self.rect.x + horizontal_pad, self.rect.y + vertical_pad)
-        screen.blit(self.text_surface, corner)
+
+        # Then proper spacing for both the labels and input text.
+        label_heights = [label.get_height() for label in self.label_texts]
+        total_label_height = sum(label_heights)
+        vertical_space = (self.rect.h - self.input_text.get_height() -
+                          total_label_height) // 3
+        horizontal_input = (self.rect.w - self.input_text.get_width()) // 2
+        corner_input = (self.rect.x + horizontal_input,
+                        self.rect.y + total_label_height + 2 * vertical_space)
+        screen.blit(self.input_text, corner_input)
+
+        # To finish, we work on and display the label lines.
+        for index, label in enumerate(self.label_texts):
+            horizontal_padding = (self.rect.w - label.get_width()) // 2
+            vertical_padding = vertical_space + sum(label_heights[:index])
+            corner_label = (self.rect.x + horizontal_padding,
+                            self.rect.y + vertical_padding)
+            screen.blit(label, corner_label)
