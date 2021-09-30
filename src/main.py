@@ -1,5 +1,5 @@
 from visuals.text_button import StateChangerButton, NumberInput, Position
-from visuals.colours import Colour, OLIVE, PINK, WHITE
+from visuals.colours import Colour, OLIVE, PINK, WHITE, BLACK
 from slitherlinking.slitherlink_internal_state import Slitherlink
 import pygame
 
@@ -13,7 +13,7 @@ class AppControl:
         self.fps = 60
         self.state: ButtonStateHandler = STATE_DICT[starting_state]
         self.clock = pygame.time.Clock()
-        self.grid_state = Slitherlink(1, 1)
+        self.grid_width, self.grid_height = 8, 8
 
     def app_state_update(self):
         """Pushes states further upon choosing."""
@@ -81,6 +81,7 @@ class ButtonStateHandler:
             if GAME.pressed_key_event:
                 text_surface.text_update(GAME.pressed_key_event)
             text_surface.draw(screen)
+        self.draw_state_specific_objects(screen)
 
     def update_menu(self, mouse_position: Position):
         """In case a mouse left click happens, checks whether any button
@@ -91,7 +92,7 @@ class ButtonStateHandler:
             if new_state is not None:
                 return new_state
 
-    def draw_state_specific_objects(self):
+    def draw_state_specific_objects(self, screen):
         """Enables drawing objects specific in the current state."""
 
     def startup(self):
@@ -114,18 +115,64 @@ class MainMenu(ButtonStateHandler):
         super().__init__(state_changers, [self.x, self.y], OLIVE)
 
     def cleanup(self):
-        GAME.grid_state = Slitherlink(int(self.x.text), int(self.y.text))
+        GAME.grid_width = int(self.x.text)
+        GAME.grid_height = int(self.y.text)
 
 
 class GamePlay(ButtonStateHandler):
     def __init__(self):
+        # Just placeholders for now, to not declare outside of __init__.
+        self.grid_state = Slitherlink(1, 1)
+        self.outline_rect = pygame.Rect(25, 25, 0, 0)
+        self.corner_rectangles: list[pygame.Rect] = []
+        self.horizontal_edges: list[pygame.Rect] = []
+        self.vertical_edges: list[pygame.Rect] = []
+        self.cell_rectangles: list[pygame.Rect] = []
+
         self.text_buttons = [back_to_menu]
         self.background = OLIVE
         super().__init__(self.text_buttons, [], self.background)
 
+    def startup(self):
+        self.grid_state = Slitherlink(GAME.grid_width, GAME.grid_height)
+        # Now time to calculate some grid and cell sizes.
+        number_of_tiny_columns = 3 + 7 * GAME.grid_width
+        maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
+        number_of_tiny_rows = 3 + 7 * GAME.grid_height
+        maximum_row_size = SLITHERLINK_MAX_HEIGHT // number_of_tiny_rows
+        thin_size = min(10, maximum_row_size, maximum_column_size)
+        cell_size = 6 * thin_size  # This is why the 7* was present.
+        size_together = thin_size + cell_size
+        total_width = number_of_tiny_columns * thin_size
+        total_height = number_of_tiny_rows * thin_size
+
+        # Having done that, let's precompute the relevant rectangles:
+        the_x, the_y = THE_CORNER
+        self.outline_rect = pygame.Rect(the_x, the_y, total_width, total_height)
+        for index_y in range(GAME.grid_height + 1):
+            new_corner = [the_x + thin_size,
+                          the_y + thin_size + index_y * size_together]
+            for index_x in range(GAME.grid_width + 1):
+                new_rect = pygame.Rect(*new_corner, thin_size, thin_size)
+                self.corner_rectangles.append(new_rect)
+                new_corner[0] += size_together
+
+    def draw_the_grid(self, screen):
+        """Draws the slitherlink grid. That's why we're here!"""
+        pygame.draw.rect(screen, WHITE, self.outline_rect)
+        for rect in self.corner_rectangles:
+            pygame.draw.rect(screen, BLACK, rect)
+
+    def draw_state_specific_objects(self, screen):
+        self.draw_the_grid(screen)
+
 
 if __name__ == "__main__":
     pygame.init()
+    pygame.display.set_caption("Slitherlink Maker")
+    # pygame.display.set_icon(pygame.image.load("hearts.png"))  To be added!
+    SLITHERLINK_MAX_WIDTH, SLITHERLINK_MAX_HEIGHT = 1500, 880
+    THE_CORNER = 25, 25
     SCREEN = pygame.display.set_mode((1880, 900))
     Menu = MainMenu()
     back_to_menu = StateChangerButton((1600, 800), "<- Back to Main Menu", 36,
