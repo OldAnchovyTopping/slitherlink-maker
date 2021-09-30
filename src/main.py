@@ -197,13 +197,13 @@ class GamePlay(ButtonStateHandler):
                 state_y += 2
         self.edges = vertical_edges + horizontal_edges
         # Finally, we make the number cell rectangles:
-        for index_y in range(1, GAME.grid_height + 1):
+        for index_y in range(GAME.grid_height):
             new_corner = [the_x + 2 * thin_size,
                           the_y + 2 * thin_size + index_y * size_together]
-            state_y = 2 * index_y
+            state_y = 2 * index_y + 2
             state_x = 2
             for index_x in range(1, GAME.grid_width + 1):
-                new_rect = pygame.Rect(*new_corner, cell_size, thin_size)
+                new_rect = pygame.Rect(*new_corner, cell_size, cell_size)
                 self.cell_rectangles.append((state_y, state_x, new_rect))
                 new_corner[0] += size_together
                 state_x += 2
@@ -222,7 +222,11 @@ class GamePlay(ButtonStateHandler):
                 text = str(number)
                 surface, _ = self.number_font.render(text, BLACK, WHITE)
                 surface = surface.convert_alpha()
-                screen.blit(surface, grid_cell)
+                vertical_pad = (grid_cell.h - surface.get_height()) // 2
+                horizontal_pad = (grid_cell.w - surface.get_width()) // 2
+                number_corner = (grid_cell.x + horizontal_pad,
+                                 grid_cell.y + vertical_pad)
+                screen.blit(surface, number_corner)
 
     def draw_state_specific_objects(self, screen):
         self.draw_the_grid(screen)

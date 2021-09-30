@@ -10,7 +10,9 @@ if __name__ == '__main__':
     number_test_grid = Slitherlink(6, 6)
     for x, y in lines:
         number_test_grid.change_line_segment(x, y, "L")
-    number_test_grid.change_number(5, 2, 0)
+
+    number_test_grid.change_number(1, 4, 0)
+    number_test_grid.change_number(4, 2, 1)
+    number_test_grid.change_number(3, 1, 2)
+    number_test_grid.change_number(5, 6, 3)
     print(number_test_grid)
-    number_test_grid.check_all_numbers()
-    print(number_test_grid.state_of_grid[2][2])
