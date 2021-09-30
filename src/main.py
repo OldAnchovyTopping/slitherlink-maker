@@ -1,13 +1,6 @@
 from visuals.text_button import StateChangerButton, NumberInput, Position
 from visuals.colours import Colour, OLIVE, PINK, WHITE
-from typing import Union
 import pygame
-import os.path
-import sys
-
-
-def entire_path(file_name: str) -> str:
-    return os.path.join(BASE_PATH, file_name)
 
 
 class AppControl:
@@ -64,8 +57,7 @@ class AppControl:
 class ButtonStateHandler:
     """Handles menu and button logic, as well as drawing."""
     def __init__(self, state_changers: list[StateChangerButton],
-                 text_input_fields: list[NumberInput],
-                 background: Union[Colour, pygame.Surface], is_solid: bool):
+                 text_input_fields: list[NumberInput], background: Colour):
         self.next_state_to_move_to = ""
         self.game_state_change_buttons = state_changers
         self.text_inputs = text_input_fields
@@ -73,15 +65,11 @@ class ButtonStateHandler:
         # A single solid colour, in which case is_background_solid == True, OR
         # A pre-loaded image, in which case is_background_solid == False.
         self.background = background
-        self.is_background_solid = is_solid
 
     def draw_visible_objects(self, screen):
         """Blits all objects on the screen with
         appropriate highlighting based on mouse position."""
-        if self.is_background_solid:  # True -> Colour, False -> pygame.image
-            screen.fill(self.background)
-        else:
-            screen.blit(self.background, (0, 0))
+        screen.fill(self.background)
         for button in self.game_state_change_buttons:
             button.button_state_update(pygame.mouse.get_pos(),
                                        GAME.mouse_left_clicked)
@@ -90,7 +78,7 @@ class ButtonStateHandler:
         for text_surface in self.text_inputs:
             text_surface.activity_update(pygame.mouse.get_pos(),
                                          GAME.mouse_left_clicked)
-            if GAME.pressed_key_event is not None:
+            if GAME.pressed_key_event:
                 text_surface.text_update(GAME.pressed_key_event)
             text_surface.draw(screen)
 
@@ -114,39 +102,32 @@ class ButtonStateHandler:
 
 class MainMenu(ButtonStateHandler):
     def __init__(self):
-        self.play_the_game = StateChangerButton((900, 200), "Play!", 36, PINK, WHITE, "game")
-        self.read_the_instructions = StateChangerButton((900, 400), "Instructions", 36, PINK, WHITE, "instructions")
-        self.quit_the_game = StateChangerButton((900, 800), "Quit", 36, PINK, WHITE, "quit")
-        self.state_changers = [self.play_the_game, self.read_the_instructions,
-                               self.quit_the_game]
-        self.background = OLIVE
-        self.is_background_solid_colour = True
-        self.text_input_test = NumberInput((PINK, WHITE), 100, 100,
-                                           "horizontal\ngrid size")
-        self.text_input_test = NumberInput((PINK, WHITE), 100, 500,
-                                           "vertical\ngrid size")
-        super().__init__(self.state_changers, [self.text_input_test], self.background, self.is_background_solid_colour)
+        state_changers = [
+            StateChangerButton((900, 200), "Play!", 36, PINK, WHITE, "game"),
+            StateChangerButton((900, 400), "Instructions", 36, PINK, WHITE,
+                               "instructions"),
+            StateChangerButton((900, 800), "Quit", 36, PINK, WHITE, "quit")
+        ]
+        text_inputs = [
+            NumberInput((PINK, WHITE), 100, 100, "horizontal\ngrid size"),
+            NumberInput((PINK, WHITE), 100, 500, "vertical\ngrid size")
+        ]
+        super().__init__(state_changers, text_inputs, OLIVE)
 
 
 class GamePlay(ButtonStateHandler):
     def __init__(self):
-        self.text_buttons = [back_to_main_menu_button]
+        self.text_buttons = [back_to_menu]
         self.background = OLIVE
-        self.is_background_solid_colour = True
-        super().__init__(self.text_buttons, [], self.background, self.is_background_solid_colour)
+        super().__init__(self.text_buttons, [], self.background)
 
 
 if __name__ == "__main__":
-    # This is to have a base path to file in a variable,
-    # regardless of if we freeze the project into a .exe. format.
-    if getattr(sys, "frozen", False):
-        BASE_PATH = sys._MEIPASS
-    else:
-        BASE_PATH = os.path.dirname(os.path.abspath(__file__))
     pygame.init()
     SCREEN = pygame.display.set_mode((1880, 900))
     Menu = MainMenu()
-    back_to_main_menu_button = StateChangerButton((1600, 800), "<- Back to Main Menu", 36, OLIVE, WHITE, "main_menu")
+    back_to_menu = StateChangerButton((1600, 800), "<- Back to Main Menu", 36,
+                                      OLIVE, WHITE, "main_menu")
     Time_To_Play = GamePlay()
     STATE_DICT: dict[str, ButtonStateHandler] = {
         "main_menu": Menu,
