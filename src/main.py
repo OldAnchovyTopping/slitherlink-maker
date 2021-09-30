@@ -1,5 +1,6 @@
 from visuals.text_button import StateChangerButton, NumberInput, Position
 from visuals.colours import Colour, OLIVE, PINK, WHITE
+from slitherlinking.slitherlink_internal_state import Slitherlink
 import pygame
 
 
@@ -12,17 +13,19 @@ class AppControl:
         self.fps = 60
         self.state: ButtonStateHandler = STATE_DICT[starting_state]
         self.clock = pygame.time.Clock()
+        self.grid_state = Slitherlink(1, 1)
 
     def app_state_update(self):
         """Pushes states further upon choosing."""
-        # self.state.cleanup() So far this doesn't seem necessary.
+        self.state.cleanup()  # Any necessary work to close the state.
+
         try:
             self.state = STATE_DICT[self.state.next_state_to_move_to]
         except KeyError:
             assert self.state.next_state_to_move_to == "quit"
             self.game_running = False
 
-        self.state.startup()
+        self.state.startup()  # Any necessary work to open up the state.
 
     def event_loop(self):
         """Basis for all application events."""
@@ -61,9 +64,6 @@ class ButtonStateHandler:
         self.next_state_to_move_to = ""
         self.game_state_change_buttons = state_changers
         self.text_inputs = text_input_fields
-        # Now store background info. self.background is either:
-        # A single solid colour, in which case is_background_solid == True, OR
-        # A pre-loaded image, in which case is_background_solid == False.
         self.background = background
 
     def draw_visible_objects(self, screen):
@@ -91,13 +91,14 @@ class ButtonStateHandler:
             if new_state is not None:
                 return new_state
 
-    def startup(self):
-        """Things that happen when a state is entered."""
-        pass
+    def draw_state_specific_objects(self):
+        """Enables drawing objects specific in the current state."""
 
-    def hover_sound(self):
-        """This might be better in the Button class..."""
-        pass
+    def startup(self):
+        """Placeholder for state start up."""
+
+    def cleanup(self):
+        """Cleans up a state, any necessary work to leave the current state."""
 
 
 class MainMenu(ButtonStateHandler):
@@ -108,11 +109,12 @@ class MainMenu(ButtonStateHandler):
                                "instructions"),
             StateChangerButton((900, 800), "Quit", 36, PINK, WHITE, "quit")
         ]
-        text_inputs = [
-            NumberInput((PINK, WHITE), 100, 100, "horizontal\ngrid size"),
-            NumberInput((PINK, WHITE), 100, 500, "vertical\ngrid size")
-        ]
-        super().__init__(state_changers, text_inputs, OLIVE)
+        self.x = NumberInput((PINK, WHITE), 100, 100, "horizontal\ngrid size")
+        self.y = NumberInput((PINK, WHITE), 100, 500, "vertical\ngrid size")
+        super().__init__(state_changers, [self.x, self.y], OLIVE)
+
+    def cleanup(self):
+        GAME.grid_state = Slitherlink(int(self.x.text), int(self.y.text))
 
 
 class GamePlay(ButtonStateHandler):
