@@ -1,5 +1,5 @@
 from visuals.text_button import StateChangerButton, NumberInput, Position
-from visuals.colours import Colour, OLIVE, PINK, WHITE, BLACK
+from visuals.colours import Colour, OLIVE, PINK, WHITE, BLACK, GRAY
 from slitherlinking.slitherlink_internal_state import Slitherlink
 import pygame
 
@@ -125,9 +125,9 @@ class GamePlay(ButtonStateHandler):
         self.grid_state = Slitherlink(1, 1)
         self.outline_rect = pygame.Rect(25, 25, 0, 0)
         self.corner_rectangles: list[pygame.Rect] = []
-        self.horizontal_edges: list[pygame.Rect] = []
-        self.vertical_edges: list[pygame.Rect] = []
-        self.cell_rectangles: list[pygame.Rect] = []
+        self.horizontal_edges: list[tuple[int, int, pygame.Rect]] = []
+        self.vertical_edges: list[tuple[int, int, pygame.Rect]] = []
+        self.cell_rectangles: list[tuple[int, int, pygame.Rect]] = []
 
         self.text_buttons = [back_to_menu]
         self.background = OLIVE
@@ -135,6 +135,10 @@ class GamePlay(ButtonStateHandler):
 
     def startup(self):
         self.grid_state = Slitherlink(GAME.grid_width, GAME.grid_height)
+        self.grid_state.change_line_segment(1, 2, "L")
+        self.grid_state.change_line_segment(7, 10, "L")
+        self.grid_state.change_line_segment(2, 3, "L")
+        self.grid_state.change_line_segment(12, 5, "L")
         # Now time to calculate some grid and cell sizes.
         number_of_tiny_columns = 3 + 7 * GAME.grid_width
         maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
@@ -146,9 +150,15 @@ class GamePlay(ButtonStateHandler):
         total_width = number_of_tiny_columns * thin_size
         total_height = number_of_tiny_rows * thin_size
 
-        # Having done that, let's precompute the relevant rectangles:
+        # First we reset the rectangle memory:
         the_x, the_y = THE_CORNER
         self.outline_rect = pygame.Rect(the_x, the_y, total_width, total_height)
+        self.corner_rectangles = []
+        self.horizontal_edges = []
+        self.vertical_edges = []
+        self.cell_rectangles = []
+        # Having done that, let's precompute the relevant rectangles.
+        # First go the corners:
         for index_y in range(GAME.grid_height + 1):
             new_corner = [the_x + thin_size,
                           the_y + thin_size + index_y * size_together]
@@ -156,12 +166,38 @@ class GamePlay(ButtonStateHandler):
                 new_rect = pygame.Rect(*new_corner, thin_size, thin_size)
                 self.corner_rectangles.append(new_rect)
                 new_corner[0] += size_together
+        # Secondly, the horizontal edge segments:
+        for index_y in range(GAME.grid_height + 1):
+            new_corner = [the_x + 2 * thin_size,
+                          the_y + thin_size + index_y * size_together]
+            state_y = 2 * index_y + 1
+            state_x = 2
+            for index_x in range(GAME.grid_width):
+                new_rect = pygame.Rect(*new_corner, cell_size, thin_size)
+                self.horizontal_edges.append((state_y, state_x, new_rect))
+                new_corner[0] += size_together
+                state_x += 2
+        # Next go the vertical edge segments:
+        for index_x in range(GAME.grid_height + 1):
+            new_corner = [the_x + thin_size + index_x * size_together,
+                          the_y + 2 * thin_size]
+            state_x = 2 * index_x + 1
+            state_y = 2
+            for index_y in range(GAME.grid_width):
+                new_rect = pygame.Rect(*new_corner, thin_size, cell_size)
+                self.horizontal_edges.append((state_y, state_x, new_rect))
+                new_corner[1] += size_together
+                state_y += 2
 
     def draw_the_grid(self, screen):
         """Draws the slitherlink grid. That's why we're here!"""
         pygame.draw.rect(screen, WHITE, self.outline_rect)
         for rect in self.corner_rectangles:
             pygame.draw.rect(screen, BLACK, rect)
+        for y, x, horizontal_edge in self.horizontal_edges:
+            edge_is_lined = self.grid_state.state_of_grid[y][x] == "L"
+            colour = GRAY if edge_is_lined else WHITE
+            pygame.draw.rect(screen, colour, horizontal_edge)
 
     def draw_state_specific_objects(self, screen):
         self.draw_the_grid(screen)
@@ -172,7 +208,7 @@ if __name__ == "__main__":
     pygame.display.set_caption("Slitherlink Maker")
     # pygame.display.set_icon(pygame.image.load("hearts.png"))  To be added!
     SLITHERLINK_MAX_WIDTH, SLITHERLINK_MAX_HEIGHT = 1500, 880
-    THE_CORNER = 25, 25
+    THE_CORNER = (25, 25)
     SCREEN = pygame.display.set_mode((1880, 900))
     Menu = MainMenu()
     back_to_menu = StateChangerButton((1600, 800), "<- Back to Main Menu", 36,
