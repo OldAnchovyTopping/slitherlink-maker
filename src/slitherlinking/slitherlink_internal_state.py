@@ -31,7 +31,7 @@ class Slitherlink:
         self.grid_height = 2 * self.height + 1
         even_row: List[Union[str, int]] =\
             list("E" + "XE" * (self.width + 1))  # With extra padding
-        odd_row: List[Union[int, str]] =\
+        odd_row: List[Union[str, int]] =\
             ["E" if i % 2 else 4 for i in range(self.grid_width + 2)]
         odd_row[0] = odd_row[-1] = " "  # Don't forget the padding
         self.state_of_grid: List[List[Union[str, int]]] =\
