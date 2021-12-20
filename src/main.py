@@ -1,7 +1,9 @@
-from visuals.text_button import StateChangerButton, NumberInput, Position
+from visuals.text_button import StateChangerButton,\
+    NumberInput, Position, TextTile
 from visuals.colours import Colour, OLIVE, PINK, WHITE, BLACK, GRAY
 from slitherlinking.slitherlink_internal_state import Slitherlink
 from pygame.freetype import SysFont
+from typing import Sequence, Union
 import pygame
 
 
@@ -63,7 +65,8 @@ class AppControl:
 class ButtonStateHandler:
     """Handles menu and button logic, as well as drawing."""
     def __init__(self, state_changers: list[StateChangerButton],
-                 text_input_fields: list[NumberInput], background: Colour):
+                 text_input_fields: Sequence[Union[TextTile, NumberInput]],
+                 background: Colour):
         self.next_state_to_move_to = ""
         self.game_state_change_buttons = state_changers
         self.text_inputs = text_input_fields
@@ -139,9 +142,11 @@ class GamePlay(ButtonStateHandler):
         self.editor_mode = True
         self.editor_switcher = pygame.Rect(1600, 100, 60, 60)
 
-        self.text_buttons = [back_to_menu]
+        filename = TextTile((PINK, WHITE), 1400, 300, "Name of puzzle/file:")
+        self.state_buttons = [back_to_menu]
+        self.input_tiles = [filename]
         self.background = OLIVE
-        super().__init__(self.text_buttons, [], self.background)
+        super().__init__(self.state_buttons, self.input_tiles, self.background)
 
     def startup(self):
         self.grid_state = Slitherlink(GAME.grid_width, GAME.grid_height)

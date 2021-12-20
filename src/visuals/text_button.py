@@ -121,3 +121,64 @@ class NumberInput:
             corner_label = (self.rect.x + horizontal_padding,
                             self.rect.y + vertical_padding)
             screen.blit(label, corner_label)
+
+
+class TextTile:
+    def __init__(self, colours: tuple[Colour, Colour],
+                 corner_x: int, corner_y: int, label_string: str):
+        self.rect = pygame.Rect(corner_x, corner_y, 400, 100)
+        self.active_colour, self.inactive_colour = colours
+        self.colour = self.inactive_colour
+        self.text_size = 40
+        self.label_size = 30
+        self.text = "Placeholder"
+        self.label = label_string
+        self.text_surface, self.label_surface = self.recreate_surfaces()
+        self.is_active = False
+
+    def recreate_surfaces(self):
+        text = create_surface(self.text, self.text_size, self.colour, BLACK)
+        label = create_surface(self.label, self.label_size, self.colour, BLACK)
+        return text, label
+
+    def activity_update(self, mouse_position: Position, clicked: bool):
+        if clicked:
+            if self.rect.collidepoint(mouse_position):
+                self.is_active = True
+                self.colour = self.active_colour
+                # Re-render the text.
+                self.text_surface, self.label_surface = self.recreate_surfaces()
+
+    def text_update(self, key_press_event):
+        pressed_key = key_press_event.key
+        if self.is_active:
+            if pressed_key == pygame.K_RETURN:
+                self.is_active = False
+                self.colour = self.inactive_colour
+            elif pressed_key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+                if not self.text:
+                    self.text = "f"
+            else:
+                self.text += key_press_event.unicode
+        # Re-render the text.
+        self.text_surface, self.label_surface = self.recreate_surfaces()
+
+    def draw(self, screen):
+        # First the box outline.
+        pygame.draw.rect(screen, self.colour, self.rect, 2)
+
+        # Then proper spacing for both the label and input text.
+        label_height = self.label_surface.get_height()
+        vertical_space = (self.rect.h - self.text_surface.get_height() -
+                          label_height) // 3
+        horizontal_input = (self.rect.w - self.text_surface.get_width()) // 2
+        corner_input = (self.rect.x + horizontal_input,
+                        self.rect.y + label_height + 2 * vertical_space)
+        screen.blit(self.text_surface, corner_input)
+
+        # To finish, we display the label.
+        horizontal_padding = (self.rect.w - self.label_surface.get_width()) // 2
+        corner_label = (self.rect.x + horizontal_padding,
+                        self.rect.y + vertical_space)
+        screen.blit(self.label_surface, corner_label)
