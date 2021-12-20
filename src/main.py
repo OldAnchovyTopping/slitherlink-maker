@@ -128,7 +128,9 @@ class GamePlay(ButtonStateHandler):
         self.corner_rectangles: list[pygame.Rect] = []
         self.edges: list[tuple[int, int, pygame.Rect]] = []
         self.cell_rectangles: list[tuple[int, int, pygame.Rect]] = []
+        self.x_rectangles: dict[tuple[int, int], pygame.Rect] = {}
         self.number_font = SysFont("Palatino", 1)
+        self.edge_x, _ = SysFont("Palatino", 1).render("x", BLACK, WHITE)
 
         self.text_buttons = [back_to_menu]
         self.background = OLIVE
@@ -137,13 +139,22 @@ class GamePlay(ButtonStateHandler):
     def startup(self):
         self.grid_state = Slitherlink(GAME.grid_width, GAME.grid_height)
         self.grid_state.change_line_segment(1, 2, "L")
+        self.grid_state.change_line_segment(1, 4, "X")
+        self.grid_state.change_line_segment(1, 6, "X")
+        self.grid_state.change_line_segment(1, 8, "X")
         self.grid_state.change_line_segment(7, 10, "L")
         self.grid_state.change_line_segment(2, 3, "L")
+        self.grid_state.change_line_segment(9, 4, "X")
         self.grid_state.change_line_segment(12, 5, "L")
+        self.grid_state.change_line_segment(14, 5, "L")
+        self.grid_state.change_line_segment(14, 11, "L")
+        self.grid_state.change_line_segment(11, 14, "L")
+        self.grid_state.change_line_segment(13, 16, "L")
         self.grid_state.change_number(1, 4, 0)
         self.grid_state.change_number(4, 2, 1)
         self.grid_state.change_number(3, 1, 2)
         self.grid_state.change_number(5, 6, 3)
+        self.grid_state.change_number(8, 8, 0)
         # Now time to calculate some grid and cell sizes.
         number_of_tiny_columns = 3 + 7 * GAME.grid_width
         maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
@@ -155,6 +166,13 @@ class GamePlay(ButtonStateHandler):
         total_width = number_of_tiny_columns * thin_size
         total_height = number_of_tiny_rows * thin_size
         self.number_font = SysFont("Palatino", cell_size)
+        x_font = SysFont("Palatino", cell_size // 2)
+        self.edge_x, _ = x_font.render("x", BLACK, WHITE)
+        cross_h, cross_w = self.edge_x.get_height(), self.edge_x.get_width()
+        horizontal_thin_offset_x: int = (cross_h - thin_size) // 2
+        horizontal_thick_offset_x: int = (cell_size - cross_w) // 2
+        vertical_thick_offset_x: int = (cell_size - cross_h) // 2
+        vertical_thin_offset_x: int = (cross_w - thin_size) // 2
 
         # First we reset the rectangle memory:
         the_x, the_y = THE_CORNER
@@ -162,38 +180,57 @@ class GamePlay(ButtonStateHandler):
         self.corner_rectangles = []
         self.edges = []
         self.cell_rectangles = []
+        self.x_rectangles = {}
         # Having done that, let's precompute the relevant rectangles.
         # First go the corners:
         for index_y in range(GAME.grid_height + 1):
             new_corner = [the_x + thin_size,
                           the_y + thin_size + index_y * size_together]
-            for index_x in range(GAME.grid_width + 1):
-                new_rect = pygame.Rect(*new_corner, thin_size, thin_size)
+            for _ in range(GAME.grid_width + 1):
+                x_cor, y_cor = new_corner
+                new_rect = pygame.Rect(x_cor, y_cor, thin_size, thin_size)
                 self.corner_rectangles.append(new_rect)
                 new_corner[0] += size_together
         # Secondly, the horizontal edge segments:
         horizontal_edges: list[tuple[int, int, pygame.Rect]] = []
         for index_y in range(GAME.grid_height + 1):
-            new_corner = [the_x + 2 * thin_size,
-                          the_y + thin_size + index_y * size_together]
+            y_base = the_y + thin_size + index_y * size_together
+            new_corner = [the_x + 2 * thin_size, y_base]
+            cross_corner = [the_x + 2 * thin_size + horizontal_thick_offset_x,
+                            y_base - horizontal_thin_offset_x]
             state_y = 2 * index_y + 1
             state_x = 2
-            for index_x in range(GAME.grid_width):
-                new_rect = pygame.Rect(*new_corner, cell_size, thin_size)
+            for _ in range(GAME.grid_width):
+                x_cor, y_cor = new_corner
+                new_rect = pygame.Rect(x_cor, y_cor, cell_size, thin_size)
                 horizontal_edges.append((state_y, state_x, new_rect))
+                # We also have to stash the rectangles for X's.
+                x_cor, y_cor = cross_corner
+                x_rect = pygame.Rect(x_cor, y_cor, cross_w, cross_h)
+                self.x_rectangles[(state_y, state_x)] = x_rect
                 new_corner[0] += size_together
+                cross_corner[0] += size_together
                 state_x += 2
         # Next go the vertical edge segments:
         vertical_edges: list[tuple[int, int, pygame.Rect]] = []
         for index_x in range(GAME.grid_height + 1):
+            x_base = the_x + thin_size + index_x * size_together
             new_corner = [the_x + thin_size + index_x * size_together,
                           the_y + 2 * thin_size]
+            cross_corner = [x_base - vertical_thin_offset_x,
+                            the_y + 2 * thin_size + vertical_thick_offset_x]
             state_x = 2 * index_x + 1
             state_y = 2
-            for index_y in range(GAME.grid_width):
-                new_rect = pygame.Rect(*new_corner, thin_size, cell_size)
+            for _ in range(GAME.grid_width):
+                x_cor, y_cor = new_corner
+                new_rect = pygame.Rect(x_cor, y_cor, thin_size, cell_size)
                 vertical_edges.append((state_y, state_x, new_rect))
+                # We also have to stash the rectangles for X's.
+                x_cor, y_cor = cross_corner
+                x_rect = pygame.Rect(x_cor, y_cor, cross_w, cross_h)
+                self.x_rectangles[(state_y, state_x)] = x_rect
                 new_corner[1] += size_together
+                cross_corner[1] += size_together
                 state_y += 2
         self.edges = vertical_edges + horizontal_edges
         # Finally, we make the number cell rectangles:
@@ -203,7 +240,8 @@ class GamePlay(ButtonStateHandler):
             state_y = 2 * index_y + 2
             state_x = 2
             for index_x in range(1, GAME.grid_width + 1):
-                new_rect = pygame.Rect(*new_corner, cell_size, cell_size)
+                x_cor, y_cor = new_corner
+                new_rect = pygame.Rect(x_cor, y_cor, cell_size, cell_size)
                 self.cell_rectangles.append((state_y, state_x, new_rect))
                 new_corner[0] += size_together
                 state_x += 2
@@ -213,12 +251,16 @@ class GamePlay(ButtonStateHandler):
         pygame.draw.rect(screen, WHITE, self.outline_rect)
         for rect in self.corner_rectangles:
             pygame.draw.rect(screen, BLACK, rect)
-        for y, x, horizontal_edge in self.edges:
+        for y, x, orthogonal_edge_rect in self.edges:
+            if self.grid_state.state_of_grid[y][x] == "X":
+                x_rect = self.x_rectangles[(y, x)]
+                screen.blit(self.edge_x, x_rect)
+                continue
             edge_is_lined = self.grid_state.state_of_grid[y][x] == "L"
             colour = GRAY if edge_is_lined else WHITE
-            pygame.draw.rect(screen, colour, horizontal_edge)
+            pygame.draw.rect(screen, colour, orthogonal_edge_rect)
         for y, x, grid_cell in self.cell_rectangles:
-            if (number := self.grid_state.state_of_grid[y][x]) <= 3:
+            if (number := self.grid_state.state_of_grid[y][x]) in {0, 1, 2, 3}:
                 text = str(number)
                 surface, _ = self.number_font.render(text, BLACK, WHITE)
                 surface = surface.convert_alpha()

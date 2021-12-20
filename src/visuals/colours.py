@@ -1,3 +1,4 @@
+"""Just a colour tuple list to be imported. Also the Colour type."""
 Colour = tuple[int, int, int, int]  # Alpha value MUST be included!
 BLACK: Colour = (0, 0, 0, 255)
 GRAY: Colour = (128, 128, 128, 255)
