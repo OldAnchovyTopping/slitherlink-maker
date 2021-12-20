@@ -35,8 +35,10 @@ class AppControl:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.game_running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                self.mouse_left_clicked = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                self.state.process_specific_events(event)
+                if event.button == 1:
+                    self.mouse_left_clicked = True
             if event.type == pygame.KEYDOWN:
                 self.pressed_key_event = event
 
@@ -96,6 +98,9 @@ class ButtonStateHandler:
     def draw_state_specific_objects(self, screen):
         """Enables drawing objects specific in the current state."""
 
+    def process_specific_events(self, event):
+        """Takes care of the more specific events."""
+
     def startup(self):
         """Placeholder for state start up."""
 
@@ -131,6 +136,8 @@ class GamePlay(ButtonStateHandler):
         self.x_rectangles: dict[tuple[int, int], pygame.Rect] = {}
         self.number_font = SysFont("Palatino", 1)
         self.edge_x, _ = SysFont("Palatino", 1).render("x", BLACK, WHITE)
+        self.editor_mode = True
+        self.editor_switcher = pygame.Rect(1600, 100, 60, 60)
 
         self.text_buttons = [back_to_menu]
         self.background = OLIVE
@@ -155,7 +162,7 @@ class GamePlay(ButtonStateHandler):
         self.grid_state.change_number(3, 1, 2)
         self.grid_state.change_number(5, 6, 3)
         self.grid_state.change_number(8, 8, 0)
-        # Now time to calculate some grid and cell sizes.
+        # We need to calculate some grid and cell sizes.
         number_of_tiny_columns = 3 + 7 * GAME.grid_width
         maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
         number_of_tiny_rows = 3 + 7 * GAME.grid_height
@@ -246,8 +253,12 @@ class GamePlay(ButtonStateHandler):
                 new_corner[0] += size_together
                 state_x += 2
 
-    def draw_the_grid(self, screen):
+    def draw_state_specific_objects(self, screen):
         """Draws the slitherlink grid. That's why we're here!"""
+        if self.editor_mode:
+            pygame.draw.rect(screen, BLACK, self.editor_switcher)
+        else:
+            pygame.draw.rect(screen, WHITE, self.editor_switcher)
         pygame.draw.rect(screen, WHITE, self.outline_rect)
         for rect in self.corner_rectangles:
             pygame.draw.rect(screen, BLACK, rect)
@@ -270,8 +281,30 @@ class GamePlay(ButtonStateHandler):
                                  grid_cell.y + vertical_pad)
                 screen.blit(surface, number_corner)
 
-    def draw_state_specific_objects(self, screen):
-        self.draw_the_grid(screen)
+    def process_specific_events(self, event):
+        """More specifically, processes the clicks."""
+        click_x, click_y = pygame.mouse.get_pos()
+        if self.editor_switcher.collidepoint(click_x, click_y):
+            self.editor_mode = not self.editor_mode
+        if self.outline_rect.collidepoint(click_x, click_y):
+            # This means that the click needs further processing.
+            if event.button == 3:
+                number_shift = -1
+                letter_to_put = "X"
+            else:  # We shall regard *only* the right click as decrement.
+                number_shift = 1
+                letter_to_put = "L"
+            for y, x, rectangle in self.edges:
+                if rectangle.collidepoint(click_x, click_y):
+                    current_tile = self.grid_state.state_of_grid[y][x]
+                    new_tile = letter_to_put if current_tile == "E" else "E"
+                    self.grid_state.state_of_grid[y][x] = new_tile
+            if self.editor_mode:  # Otherwise numbers can't change.
+                for y, x, cell in self.cell_rectangles:
+                    if cell.collidepoint(click_x, click_y):
+                        current_number = self.grid_state.state_of_grid[y][x]
+                        new_number = (current_number + number_shift) % 5
+                        self.grid_state.state_of_grid[y][x] = new_number
 
 
 if __name__ == "__main__":
