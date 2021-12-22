@@ -11,7 +11,7 @@ def number_test_grid():
              (11, 10), (12, 3), (12, 5), (13, 4)]
     testing_grid = Slitherlink(6, 6)
     for x, y in lines:
-        testing_grid.change_line_segment(x, y, "L")
+        testing_grid.change_line_segment(x, y, 12)
     return testing_grid
 
 
