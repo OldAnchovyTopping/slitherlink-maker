@@ -1,4 +1,4 @@
-from pygame.freetype import SysFont
+from pygame.font import SysFont
 from pygame.sprite import Sprite
 import pygame
 from visuals.colours import Colour, BLACK
@@ -8,8 +8,8 @@ Position = tuple[int, int]
 def create_surface(text: str, size: int, bg_rgb: Colour, font_rgb: Colour,
                    bolds: bool = False, italics: bool = False):
     """Returns a text surface to become a button later."""
-    font = SysFont("Palatino", size, bolds, italics)
-    surface, _ = font.render(text, font_rgb, bg_rgb)
+    font = SysFont("palatinolinotype", size, bolds, italics)
+    surface = font.render(text, True, font_rgb, bg_rgb)
     return surface.convert_alpha()
 
 
@@ -28,7 +28,7 @@ class StateChangerButton(Sprite):
         self.mouse_over = False
         self.text = text
         self.default_image = create_surface(text, size, bg_rgb, font_rgb)
-        self.highlight_image = create_surface(text, round(size * 1.3),
+        self.highlight_image = create_surface(text, round(size * 1.2),
                                               bg_rgb, font_rgb, True, True)
         self.default_rect = self.default_image.get_rect(center=center_pos)
         self.highlight_rect = self.highlight_image.get_rect(center=center_pos)
@@ -157,8 +157,6 @@ class TextTile:
                 self.colour = self.inactive_colour
             elif pressed_key == pygame.K_BACKSPACE:
                 self.text = self.text[:-1]
-                if not self.text:
-                    self.text = "f"
             else:
                 self.text += key_press_event.unicode
         # Re-render the text.

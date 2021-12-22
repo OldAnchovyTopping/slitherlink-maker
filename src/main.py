@@ -2,7 +2,7 @@ from visuals.text_button import StateChangerButton,\
     NumberInput, Position, TextTile
 from visuals.colours import Colour, OLIVE, PINK, WHITE, BLACK, GRAY
 from slitherlinking.slitherlink_internal_state import Slitherlink
-from pygame.freetype import SysFont
+from pygame.font import SysFont
 from typing import Sequence, Union
 import pygame
 
@@ -114,10 +114,10 @@ class ButtonStateHandler:
 class MainMenu(ButtonStateHandler):
     def __init__(self):
         state_changers = [
-            StateChangerButton((900, 200), "Play!", 36, PINK, WHITE, "game"),
-            StateChangerButton((900, 400), "Instructions", 36, PINK, WHITE,
+            StateChangerButton((900, 200), "Play!", 70, PINK, WHITE, "game"),
+            StateChangerButton((900, 400), "Instructions", 65, PINK, WHITE,
                                "instructions"),
-            StateChangerButton((900, 800), "Quit", 36, PINK, WHITE, "quit")
+            StateChangerButton((900, 800), "Quit", 60, PINK, WHITE, "quit")
         ]
         self.x = NumberInput((PINK, WHITE), 100, 100, "horizontal\ngrid size")
         self.y = NumberInput((PINK, WHITE), 100, 500, "vertical\ngrid size")
@@ -137,8 +137,8 @@ class GamePlay(ButtonStateHandler):
         self.edges: list[tuple[int, int, pygame.Rect]] = []
         self.cell_rectangles: list[tuple[int, int, pygame.Rect]] = []
         self.x_rectangles: dict[tuple[int, int], pygame.Rect] = {}
-        self.number_font = SysFont("Palatino", 1)
-        self.edge_x, _ = SysFont("Palatino", 1).render("x", BLACK, WHITE)
+        self.number_font = SysFont("palatinolinotype", 1)
+        self.edge_x = self.number_font.render("x", True, BLACK, WHITE)
         self.editor_mode = True
         self.editor_switcher = pygame.Rect(1600, 100, 60, 60)
 
@@ -167,6 +167,7 @@ class GamePlay(ButtonStateHandler):
         self.grid_state.change_number(3, 1, 2)
         self.grid_state.change_number(5, 6, 3)
         self.grid_state.change_number(8, 8, 0)
+        print(self.grid_state.state_of_grid)
         # We need to calculate some grid and cell sizes.
         number_of_tiny_columns = 3 + 7 * GAME.grid_width
         maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
@@ -177,9 +178,9 @@ class GamePlay(ButtonStateHandler):
         size_together = thin_size + cell_size
         total_width = number_of_tiny_columns * thin_size
         total_height = number_of_tiny_rows * thin_size
-        self.number_font = SysFont("Palatino", cell_size)
-        x_font = SysFont("Palatino", cell_size // 2)
-        self.edge_x, _ = x_font.render("x", BLACK, WHITE)
+        self.number_font = SysFont("palatinolinotype", cell_size)
+        x_font = SysFont("palatinolinotype", cell_size // 2)
+        self.edge_x = x_font.render("x", True, BLACK, WHITE)
         cross_h, cross_w = self.edge_x.get_height(), self.edge_x.get_width()
         horizontal_thin_offset_x: int = (cross_h - thin_size) // 2
         horizontal_thick_offset_x: int = (cell_size - cross_w) // 2
@@ -278,7 +279,7 @@ class GamePlay(ButtonStateHandler):
         for y, x, grid_cell in self.cell_rectangles:
             if (number := self.grid_state.state_of_grid[y][x]) in {0, 1, 2, 3}:
                 text = str(number)
-                surface, _ = self.number_font.render(text, BLACK, WHITE)
+                surface = self.number_font.render(text, True, BLACK, PINK)
                 surface = surface.convert_alpha()
                 vertical_pad = (grid_cell.h - surface.get_height()) // 2
                 horizontal_pad = (grid_cell.w - surface.get_width()) // 2
