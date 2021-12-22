@@ -1,6 +1,4 @@
-# from copy import deepcopy
 from random import randint
-# from typing import List, Union
 
 
 class PathCrossingException(Exception):

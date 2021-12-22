@@ -167,7 +167,6 @@ class GamePlay(ButtonStateHandler):
         self.grid_state.change_number(3, 1, 2)
         self.grid_state.change_number(5, 6, 3)
         self.grid_state.change_number(8, 8, 0)
-        print(self.grid_state)
         # We need to calculate some grid and cell sizes.
         number_of_tiny_columns = 3 + 7 * GAME.grid_width
         maximum_column_size = SLITHERLINK_MAX_WIDTH // number_of_tiny_columns
@@ -269,11 +268,11 @@ class GamePlay(ButtonStateHandler):
         for rect in self.corner_rectangles:
             pygame.draw.rect(screen, BLACK, rect)
         for y, x, orthogonal_edge_rect in self.edges:
-            if self.grid_state.state_of_grid[y][x] == "X":
+            if self.grid_state.state_of_grid[y][x] == 24:
                 x_rect = self.x_rectangles[(y, x)]
                 screen.blit(self.edge_x, x_rect)
                 continue
-            edge_is_lined = self.grid_state.state_of_grid[y][x] == "L"
+            edge_is_lined = self.grid_state.state_of_grid[y][x] == 12
             colour = GRAY if edge_is_lined else WHITE
             pygame.draw.rect(screen, colour, orthogonal_edge_rect)
         for y, x, grid_cell in self.cell_rectangles:
@@ -296,14 +295,14 @@ class GamePlay(ButtonStateHandler):
             # This means that the click needs further processing.
             if event.button == 3:
                 number_shift = -1
-                letter_to_put = "X"
+                number_to_put = 24
             else:  # We shall regard *only* the right click as decrement.
                 number_shift = 1
-                letter_to_put = "L"
+                number_to_put = 12
             for y, x, rectangle in self.edges:
                 if rectangle.collidepoint(click_x, click_y):
                     current_tile = self.grid_state.state_of_grid[y][x]
-                    new_tile = letter_to_put if current_tile == "E" else "E"
+                    new_tile = number_to_put if current_tile == 5 else 5
                     self.grid_state.state_of_grid[y][x] = new_tile
             if self.editor_mode:  # Otherwise numbers can't change.
                 for y, x, cell in self.cell_rectangles:
